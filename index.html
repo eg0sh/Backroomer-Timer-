@@ -180,7 +180,7 @@
   const TIMER_START = new Date('2026-09-01T00:00:00');
 
   // Конец таймера
-  const TIMER_END = new Date('2026-12-31T23:59:59');
+  const TIMER_END = new Date('2026-10-23T23:59:59');
 
   // Фиксированное «сейчас» (для проверки этапов).
   // null — таймер идёт в реальном времени.
@@ -266,7 +266,7 @@
     // > 10 дней — недели, дни, часы
     if (totalSec > 10 * 86400) {
       return { units: [
-        { v: weeks,     l: 'нед' },
+        { v: weeks,     l: 'недель' },
         { v: daysComp,  l: 'д'   },
         { v: hoursComp, l: 'ч'   }
       ]};
