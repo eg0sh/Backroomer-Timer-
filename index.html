@@ -57,7 +57,7 @@
   .frame {
     position: relative;
     z-index: 1;
-    padding: 52px 68px;
+    padding: 52px 60px;
     border: 1px solid var(--accent);
     border-radius: 4px;
     background: rgba(0, 0, 0, 0.35);
@@ -92,8 +92,10 @@
 
   .timer {
     display: flex;
-    align-items: flex-end;
-    gap: 16px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 34px;
     color: var(--accent);
     text-shadow: 0 0 26px var(--glow), 0 0 64px var(--glow);
     transition: color 1.4s ease, text-shadow 1.4s ease;
@@ -109,11 +111,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 92px;
   }
 
   .value {
-    font-size: 88px;
+    font-size: 82px;
     font-weight: 300;
     line-height: 1;
     letter-spacing: 0.02em;
@@ -121,47 +122,29 @@
   }
 
   .label {
-    margin-top: 12px;
-    font-size: 11px;
-    letter-spacing: 0.42em;
-    text-transform: uppercase;
-    opacity: 0.55;
+    margin-top: 10px;
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
     color: var(--accent);
     text-shadow: none;
+    opacity: 0.7;
     transition: color 1.4s ease;
-  }
-
-  .sep {
-    font-size: 64px;
-    font-weight: 200;
-    opacity: 0.32;
-    transform: translateY(-16px);
-    color: var(--accent);
-    text-shadow: none;
-    animation: blink 2s ease-in-out infinite;
-    transition: color 1.4s ease;
-  }
-
-  @keyframes blink {
-    0%, 48%   { opacity: 0.32; }
-    50%, 100% { opacity: 0.1; }
+    white-space: nowrap;
   }
 
   @media (max-width: 760px) {
-    .frame { padding: 34px 28px; }
-    .timer { gap: 10px; }
+    .frame { padding: 34px 24px; }
+    .timer { gap: 6px 20px; }
     .value { font-size: 48px; }
-    .unit { min-width: 54px; }
-    .label { font-size: 9px; letter-spacing: 0.32em; }
-    .sep { font-size: 38px; transform: translateY(-10px); }
+    .label { font-size: 11px; margin-top: 7px; }
   }
 
   @media (max-width: 460px) {
-    .frame { padding: 26px 18px; }
-    .value { font-size: 36px; }
-    .unit { min-width: 42px; }
-    .label { font-size: 8px; letter-spacing: 0.28em; }
-    .sep { font-size: 28px; transform: translateY(-6px); }
+    .frame { padding: 24px 14px; }
+    .value { font-size: 34px; }
+    .label { font-size: 10px; letter-spacing: 0.04em; }
+    .timer { gap: 4px 14px; }
   }
 </style>
 </head>
@@ -173,19 +156,19 @@
 
 <script>
   // ============================================================
-  //  КОНСТАНТЫ (меняйте здесь)
+  //  КОНСТАНТЫ
   // ============================================================
 
-  // Начало отсчёта — от него считаются этапы оформления
-  const TIMER_START = new Date('2026-09-01T00:00:00');
+  // Начало отсчёта (18 октября 2026, 00:00)
+  const TIMER_START = new Date('2026-10-18T00:00:00');
 
-  // Конец таймера
-  const TIMER_END = new Date('2026-10-23T23:59:59');
+  // Конец: ровно через 11 недель (77 дней) в 18:00 → 3 января 2027, 18:00
+  const TIMER_END = new Date('2027-01-03T18:00:00');
 
-  // Фиксированное «сейчас» (для проверки этапов).
-  // null — таймер идёт в реальном времени.
+  // Фиксированное «сейчас» для проверки этапов.
+  // null — живой таймер.
   const FIXED_NOW = null;
-  // Пример: new Date('2026-10-23T12:00:00')
+  // Например: new Date('2026-12-25T12:00:00')
 
   // ============================================================
   //  ЦВЕТА ЭТАПОВ
@@ -201,6 +184,27 @@
   };
 
   // ============================================================
+  //  СКЛОНЕНИЯ
+  // ============================================================
+
+  const PLURAL = {
+    week:   ['неделя',  'недели',  'недель'],
+    day:    ['день',    'дня',     'дней'],
+    hour:   ['час',     'часа',    'часов'],
+    minute: ['минута',  'минуты',  'минут'],
+    second: ['секунда', 'секунды', 'секунд']
+  };
+
+  function plural(n, forms) {
+    const a = Math.abs(n) % 100;
+    const b = a % 10;
+    if (a > 10 && a < 20) return forms[2];
+    if (b === 1) return forms[0];
+    if (b >= 2 && b <= 4) return forms[1];
+    return forms[2];
+  }
+
+  // ============================================================
   //  ВСПОМОГАТЕЛЬНОЕ
   // ============================================================
 
@@ -210,18 +214,8 @@
     return FIXED_NOW ? new Date(FIXED_NOW) : new Date();
   }
 
-  function pad(n) {
-    return String(n).padStart(2, '0');
-  }
-
   // ============================================================
-  //  ЭТАП (ЦВЕТ)
-  //  red    — от начала
-  //  orange — после 3 недель
-  //  yellow — после 7 недель
-  //  green  — после 9 недель
-  //  blue   — за 12 часов до конца
-  //  cyan   — после завершения
+  //  ЭТАП
   // ============================================================
 
   function getStage(now) {
@@ -248,51 +242,63 @@
   }
 
   // ============================================================
-  //  РАЗБИВКА НА ЕДИНИЦЫ
+  //  ЛОГИКА ЕДИНИЦ
   // ============================================================
 
-  function getParts(remainingMs) {
+  function getUnits(remainingMs) {
     const totalSec = Math.max(0, Math.floor(remainingMs / 1000));
 
     const weeks      = Math.floor(totalSec / (7 * 86400));
+    const daysComp   = Math.floor((totalSec % (7 * 86400)) / 86400);
     const daysTotal  = Math.floor(totalSec / 86400);
     const hoursTotal = Math.floor(totalSec / 3600);
-
-    const daysComp   = Math.floor((totalSec % (7 * 86400)) / 86400);
     const hoursComp  = Math.floor((totalSec % 86400) / 3600);
     const minutes    = Math.floor((totalSec % 3600) / 60);
     const seconds    = totalSec % 60;
 
-    // > 10 дней — недели, дни, часы
+    // > 10 дней — недели + дни + часы
     if (totalSec > 10 * 86400) {
-      return { units: [
-        { v: weeks,     l: 'недель' },
-        { v: daysComp,  l: 'д'   },
-        { v: hoursComp, l: 'ч'   }
-      ]};
+      return [
+        { v: weeks,     f: plural(weeks,     PLURAL.week)   },
+        { v: daysComp,  f: plural(daysComp,  PLURAL.day)    },
+        { v: hoursComp, f: plural(hoursComp, PLURAL.hour)   }
+      ];
     }
 
-    // 3–10 дней — дни, часы
+    // 3–10 дней — дни + часы
     if (totalSec > 3 * 86400) {
-      return { units: [
-        { v: daysTotal,  l: 'д' },
-        { v: hoursComp,  l: 'ч' }
-      ]};
+      return [
+        { v: daysTotal, f: plural(daysTotal, PLURAL.day)    },
+        { v: hoursComp, f: plural(hoursComp, PLURAL.hour)   }
+      ];
     }
 
     // 12 часов – 3 дня — только часы
     if (totalSec > 12 * 3600) {
-      return { units: [
-        { v: hoursTotal, l: 'ч' }
-      ]};
+      return [
+        { v: hoursTotal, f: plural(hoursTotal, PLURAL.hour) }
+      ];
     }
 
-    // ≤ 12 часов — часы, минуты, секунды
-    return { units: [
-      { v: hoursTotal, l: 'ч'   },
-      { v: minutes,    l: 'мин' },
-      { v: seconds,    l: 'с'   }
-    ]};
+    // ≤ 12 часов — часы + минуты + секунды
+    return [
+      { v: hoursTotal, f: plural(hoursTotal, PLURAL.hour)   },
+      { v: minutes,    f: plural(minutes,    PLURAL.minute) },
+      { v: seconds,    f: plural(seconds,    PLURAL.second) }
+    ];
+  }
+
+  // Дополнение нулём — только для минут и секунд, и для часов, если они младше минут
+  function displayValue(unit, allUnits) {
+    const isMinOrSec = unit.f === PLURAL.minute[0] || unit.f === PLURAL.minute[1] || unit.f === PLURAL.minute[2] ||
+                       unit.f === PLURAL.second[0] || unit.f === PLURAL.second[1] || unit.f === PLURAL.second[2];
+    const isHourWithMin = unit.f === PLURAL.hour[0] || unit.f === PLURAL.hour[1] || unit.f === PLURAL.hour[2];
+    const hasMinutes = allUnits.some(u => u.f === PLURAL.minute[0] || u.f === PLURAL.minute[1] || u.f === PLURAL.minute[2]);
+
+    if (unit.v < 10 && (isMinOrSec || (isHourWithMin && hasMinutes))) {
+      return '0' + unit.v;
+    }
+    return String(unit.v);
   }
 
   // ============================================================
@@ -303,22 +309,29 @@
 
   function renderTimer(now) {
     const remaining = Math.max(0, TIMER_END - now);
-    const parts = getParts(remaining);
-    const layout = parts.units.map(u => u.l).join('|');
+    const units = getUnits(remaining);
+    const layout = units.map(u => u.f).join('|');
 
     if (layout !== currentLayout) {
       currentLayout = layout;
-      timerEl.innerHTML = parts.units.map(u =>
-        `<div class="unit"><div class="value">${pad(u.v)}</div><div class="label">${u.l}</div></div>`
-      ).join('<span class="sep">:</span>');
+      timerEl.innerHTML = units.map(u =>
+        `<div class="unit">
+           <div class="value">${displayValue(u, units)}</div>
+           <div class="label">${u.f}</div>
+         </div>`
+      ).join('');
     } else {
       const valueEls = timerEl.querySelectorAll('.value');
-      parts.units.forEach((u, i) => {
+      units.forEach((u, i) => {
         const el = valueEls[i];
-        if (el) {
-          const text = pad(u.v);
-          if (el.textContent !== text) el.textContent = text;
-        }
+        if (!el) return;
+        const text = displayValue(u, units);
+        if (el.textContent !== text) el.textContent = text;
+      });
+      const labelEls = timerEl.querySelectorAll('.label');
+      units.forEach((u, i) => {
+        const el = labelEls[i];
+        if (el && el.textContent !== u.f) el.textContent = u.f;
       });
     }
   }
