@@ -15,172 +15,186 @@
   html, body {
     height: 100%;
     margin: 0;
-    background-color: #06080b;
+    background-color: #000;
     color: var(--accent);
     font-family: 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Consolas', 'Courier New', monospace;
     overflow: hidden;
-    transition: background-color 1.4s ease;
   }
 
   body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background-image: url('https://i.ibb.co/7JcZGbzV/black-background-with-focus-spot-light-1017-27230.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     position: relative;
   }
 
-  /* лёгкая виньетка */
+  /* затемнение поверх фото — для читаемости цифр */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background: radial-gradient(ellipse at 50% 45%, rgba(255,255,255,0.035), transparent 62%);
+    background:
+      radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.65) 70%, rgba(0,0,0,0.85) 100%);
     pointer-events: none;
     z-index: 0;
   }
 
-  /* едва заметная сетка */
+  /* едва заметная сетка поверх */
   body::after {
     content: '';
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-    background-size: 52px 52px;
-    -webkit-mask-image: radial-gradient(ellipse at center, black 15%, transparent 72%);
-    mask-image: radial-gradient(ellipse at center, black 15%, transparent 72%);
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: radial-gradient(ellipse at center, black 10%, transparent 75%);
+    mask-image: radial-gradient(ellipse at center, black 10%, transparent 75%);
     pointer-events: none;
     z-index: 0;
   }
 
-  .frame {
-    position: relative;
-    z-index: 1;
-    padding: 52px 60px;
+  /* тонкая рамка по всему экрану */
+  .edge {
+    position: fixed;
+    inset: 18px;
     border: 1px solid var(--accent);
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(2px);
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,0.02),
-      0 0 70px var(--glow),
-      inset 0 0 70px var(--glow);
-    transition: border-color 1.4s ease, box-shadow 1.4s ease;
+    opacity: 0.28;
+    pointer-events: none;
+    z-index: 2;
+    transition: border-color 1.4s ease, opacity 1.4s ease;
   }
 
-  /* угловые насечки */
-  .frame::before,
-  .frame::after {
+  /* угловые насечки по краям экрана */
+  .edge::before,
+  .edge::after {
     content: '';
     position: absolute;
-    width: 20px;
-    height: 20px;
+    width: 26px;
+    height: 26px;
     border-color: var(--accent);
     border-style: solid;
     transition: border-color 1.4s ease;
-    pointer-events: none;
   }
-  .frame::before {
+  .edge::before {
     top: -1px; left: -1px;
     border-width: 2px 0 0 2px;
   }
-  .frame::after {
+  .edge::after {
     bottom: -1px; right: -1px;
     border-width: 0 2px 2px 0;
   }
 
+  /* ТАЙМЕР НА ВЕСЬ ЭКРАН */
   .timer {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 8px 34px;
+    gap: 1.2vw 4vw;
+    padding: 4vh 4vw;
     color: var(--accent);
-    text-shadow: 0 0 26px var(--glow), 0 0 64px var(--glow);
+    text-shadow:
+      0 0 2vw var(--glow),
+      0 0 6vw var(--glow),
+      0 0 12vw var(--glow);
     transition: color 1.4s ease, text-shadow 1.4s ease;
-    animation: breathe 4.5s ease-in-out infinite;
+    animation: breathe 5s ease-in-out infinite;
   }
 
   @keyframes breathe {
     0%, 100% { opacity: 1; }
-    50%      { opacity: 0.84; }
+    50%      { opacity: 0.88; }
   }
 
   .unit {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    flex: 0 1 auto;
   }
 
   .value {
-    font-size: 82px;
-    font-weight: 300;
-    line-height: 1;
-    letter-spacing: 0.02em;
+    font-size: clamp(72px, 17vw, 300px);
+    font-weight: 200;
+    line-height: 0.92;
+    letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
   }
 
   .label {
-    margin-top: 10px;
-    font-size: 15px;
+    margin-top: 1.2vh;
+    font-size: clamp(14px, 1.6vw, 30px);
     font-weight: 400;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     color: var(--accent);
     text-shadow: none;
-    opacity: 0.7;
+    opacity: 0.72;
     transition: color 1.4s ease;
     white-space: nowrap;
   }
 
-  @media (max-width: 760px) {
-    .frame { padding: 34px 24px; }
-    .timer { gap: 6px 20px; }
-    .value { font-size: 48px; }
-    .label { font-size: 11px; margin-top: 7px; }
+  /* когда влезает только одна единица (часы) — она крупнее */
+  .timer.single .value {
+    font-size: clamp(120px, 30vw, 520px);
+  }
+  .timer.single .label {
+    margin-top: 2vh;
+    font-size: clamp(16px, 2vw, 40px);
   }
 
-  @media (max-width: 460px) {
-    .frame { padding: 24px 14px; }
-    .value { font-size: 34px; }
-    .label { font-size: 10px; letter-spacing: 0.04em; }
-    .timer { gap: 4px 14px; }
+  /* адаптив — на узких экранах единицы могут идти в столбик */
+  @media (max-width: 640px) {
+    .timer {
+      gap: 2vh 6vw;
+      flex-direction: column;
+    }
+    .value {
+      font-size: clamp(72px, 22vw, 180px);
+    }
+    .label {
+      margin-top: 0.4vh;
+      font-size: clamp(12px, 3.6vw, 22px);
+    }
   }
 </style>
 </head>
 <body>
 
-<div class="frame">
-  <div class="timer" id="timer"></div>
-</div>
+<div class="edge" aria-hidden="true"></div>
+<div class="timer" id="timer"></div>
 
 <script>
   // ============================================================
   //  КОНСТАНТЫ
   // ============================================================
 
-  // Начало отсчёта (18 октября 2026, 00:00)
+  // Начало отсчёта
   const TIMER_START = new Date('2026-10-18T00:00:00');
 
-  // Конец: ровно через 11 недель (77 дней) в 18:00 → 3 января 2027, 18:00
-  const TIMER_END = new Date('2026-10-24T00:59:59');
+  // Конец: 11 недель (77 дней) после начала, в 18:00 → 3 января 2027, 18:00
+  const TIMER_END = new Date('2026-10-24T00:59:00');
 
   // Фиксированное «сейчас» для проверки этапов.
   // null — живой таймер.
   const FIXED_NOW = null;
-  // Например: new Date('2026-12-25T12:00:00')
 
   // ============================================================
   //  ЦВЕТА ЭТАПОВ
   // ============================================================
 
   const STAGE_COLORS = {
-    red:    { c: '#ff4d4d', glow: 'rgba(255, 77, 77, 0.35)',  bg: '#120608' },
-    orange: { c: '#ff9f43', glow: 'rgba(255, 159, 67, 0.35)', bg: '#120b06' },
-    yellow: { c: '#f5c542', glow: 'rgba(245, 197, 66, 0.35)', bg: '#121006' },
-    green:  { c: '#3ddc84', glow: 'rgba(61, 220, 132, 0.35)', bg: '#06120b' },
-    blue:   { c: '#4a9eff', glow: 'rgba(74, 158, 255, 0.40)', bg: '#060c12' },
-    cyan:   { c: '#5ee7ff', glow: 'rgba(94, 231, 255, 0.40)', bg: '#061214' }
+    red:    { c: '#ff4d4d', glow: 'rgba(255, 77, 77, 0.35)' },
+    orange: { c: '#ff9f43', glow: 'rgba(255, 159, 67, 0.35)' },
+    yellow: { c: '#f5c542', glow: 'rgba(245, 197, 66, 0.35)' },
+    green:  { c: '#3ddc84', glow: 'rgba(61, 220, 132, 0.35)' },
+    blue:   { c: '#4a9eff', glow: 'rgba(74, 158, 255, 0.40)' },
+    cyan:   { c: '#5ee7ff', glow: 'rgba(94, 231, 255, 0.40)' }
   };
 
   // ============================================================
@@ -238,7 +252,6 @@
     const c = STAGE_COLORS[stage];
     document.documentElement.style.setProperty('--accent', c.c);
     document.documentElement.style.setProperty('--glow', c.glow);
-    document.body.style.backgroundColor = c.bg;
   }
 
   // ============================================================
@@ -288,14 +301,17 @@
     ];
   }
 
-  // Дополнение нулём — только для минут и секунд, и для часов, если они младше минут
   function displayValue(unit, allUnits) {
-    const isMinOrSec = unit.f === PLURAL.minute[0] || unit.f === PLURAL.minute[1] || unit.f === PLURAL.minute[2] ||
-                       unit.f === PLURAL.second[0] || unit.f === PLURAL.second[1] || unit.f === PLURAL.second[2];
-    const isHourWithMin = unit.f === PLURAL.hour[0] || unit.f === PLURAL.hour[1] || unit.f === PLURAL.hour[2];
-    const hasMinutes = allUnits.some(u => u.f === PLURAL.minute[0] || u.f === PLURAL.minute[1] || u.f === PLURAL.minute[2]);
+    const isMinOrSec =
+      unit.f === PLURAL.minute[0] || unit.f === PLURAL.minute[1] || unit.f === PLURAL.minute[2] ||
+      unit.f === PLURAL.second[0] || unit.f === PLURAL.second[1] || unit.f === PLURAL.second[2];
+    const isHour =
+      unit.f === PLURAL.hour[0] || unit.f === PLURAL.hour[1] || unit.f === PLURAL.hour[2];
+    const hasMinutes = allUnits.some(u =>
+      u.f === PLURAL.minute[0] || u.f === PLURAL.minute[1] || u.f === PLURAL.minute[2]
+    );
 
-    if (unit.v < 10 && (isMinOrSec || (isHourWithMin && hasMinutes))) {
+    if (unit.v < 10 && (isMinOrSec || (isHour && hasMinutes))) {
       return '0' + unit.v;
     }
     return String(unit.v);
@@ -314,6 +330,7 @@
 
     if (layout !== currentLayout) {
       currentLayout = layout;
+      timerEl.classList.toggle('single', units.length === 1);
       timerEl.innerHTML = units.map(u =>
         `<div class="unit">
            <div class="value">${displayValue(u, units)}</div>
