@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>—</title>
+<style>
+  :root {
+    --accent: #ff4d4d;
+    --glow: rgba(255, 77, 77, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    background-color: #06080b;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', 'Fira Code', 'IBM Plex Mono', 'Consolas', 'Courier New', monospace;
+    overflow: hidden;
+    transition: background-color 1.4s ease;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* лёгкая виньетка */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 45%, rgba(255,255,255,0.035), transparent 62%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* едва заметная сетка */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 52px 52px;
+    -webkit-mask-image: radial-gradient(ellipse at center, black 15%, transparent 72%);
+    mask-image: radial-gradient(ellipse at center, black 15%, transparent 72%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .frame {
+    position: relative;
+    z-index: 1;
+    padding: 52px 68px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(2px);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.02),
+      0 0 70px var(--glow),
+      inset 0 0 70px var(--glow);
+    transition: border-color 1.4s ease, box-shadow 1.4s ease;
+  }
+
+  /* угловые насечки */
+  .frame::before,
+  .frame::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: var(--accent);
+    border-style: solid;
+    transition: border-color 1.4s ease;
+    pointer-events: none;
+  }
+  .frame::before {
+    top: -1px; left: -1px;
+    border-width: 2px 0 0 2px;
+  }
+  .frame::after {
+    bottom: -1px; right: -1px;
+    border-width: 0 2px 2px 0;
+  }
+
+  .timer {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    color: var(--accent);
+    text-shadow: 0 0 26px var(--glow), 0 0 64px var(--glow);
+    transition: color 1.4s ease, text-shadow 1.4s ease;
+    animation: breathe 4.5s ease-in-out infinite;
+  }
+
+  @keyframes breathe {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.84; }
+  }
+
+  .unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 92px;
+  }
+
+  .value {
+    font-size: 88px;
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .label {
+    margin-top: 12px;
+    font-size: 11px;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    opacity: 0.55;
+    color: var(--accent);
+    text-shadow: none;
+    transition: color 1.4s ease;
+  }
+
+  .sep {
+    font-size: 64px;
+    font-weight: 200;
+    opacity: 0.32;
+    transform: translateY(-16px);
+    color: var(--accent);
+    text-shadow: none;
+    animation: blink 2s ease-in-out infinite;
+    transition: color 1.4s ease;
+  }
+
+  @keyframes blink {
+    0%, 48%   { opacity: 0.32; }
+    50%, 100% { opacity: 0.1; }
+  }
+
+  @media (max-width: 760px) {
+    .frame { padding: 34px 28px; }
+    .timer { gap: 10px; }
+    .value { font-size: 48px; }
+    .unit { min-width: 54px; }
+    .label { font-size: 9px; letter-spacing: 0.32em; }
+    .sep { font-size: 38px; transform: translateY(-10px); }
+  }
+
+  @media (max-width: 460px) {
+    .frame { padding: 26px 18px; }
+    .value { font-size: 36px; }
+    .unit { min-width: 42px; }
+    .label { font-size: 8px; letter-spacing: 0.28em; }
+    .sep { font-size: 28px; transform: translateY(-6px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="timer" id="timer"></div>
+</div>
+
+<script>
+  // ============================================================
+  //  КОНСТАНТЫ (меняйте здесь)
+  // ============================================================
+
+  // Начало отсчёта — от него считаются этапы оформления
+  const TIMER_START = new Date('2026-09-01T00:00:00');
+
+  // Конец таймера
+  const TIMER_END = new Date('2026-12-31T23:59:59');
+
+  // Фиксированное «сейчас» (для проверки этапов).
+  // null — таймер идёт в реальном времени.
+  const FIXED_NOW = null;
+  // Пример: new Date('2026-10-23T12:00:00')
+
+  // ============================================================
+  //  ЦВЕТА ЭТАПОВ
+  // ============================================================
+
+  const STAGE_COLORS = {
+    red:    { c: '#ff4d4d', glow: 'rgba(255, 77, 77, 0.35)',  bg: '#120608' },
+    orange: { c: '#ff9f43', glow: 'rgba(255, 159, 67, 0.35)', bg: '#120b06' },
+    yellow: { c: '#f5c542', glow: 'rgba(245, 197, 66, 0.35)', bg: '#121006' },
+    green:  { c: '#3ddc84', glow: 'rgba(61, 220, 132, 0.35)', bg: '#06120b' },
+    blue:   { c: '#4a9eff', glow: 'rgba(74, 158, 255, 0.40)', bg: '#060c12' },
+    cyan:   { c: '#5ee7ff', glow: 'rgba(94, 231, 255, 0.40)', bg: '#061214' }
+  };
+
+  // ============================================================
+  //  ВСПОМОГАТЕЛЬНОЕ
+  // ============================================================
+
+  const timerEl = document.getElementById('timer');
+
+  function getNow() {
+    return FIXED_NOW ? new Date(FIXED_NOW) : new Date();
+  }
+
+  function pad(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  // ============================================================
+  //  ЭТАП (ЦВЕТ)
+  //  red    — от начала
+  //  orange — после 3 недель
+  //  yellow — после 7 недель
+  //  green  — после 9 недель
+  //  blue   — за 12 часов до конца
+  //  cyan   — после завершения
+  // ============================================================
+
+  function getStage(now) {
+    const remaining = TIMER_END - now;
+    const elapsed   = now - TIMER_START;
+
+    if (remaining <= 0)                  return 'cyan';
+    if (remaining <= 12 * 3600 * 1000)   return 'blue';
+    if (elapsed >= 9 * 7 * 86400 * 1000) return 'green';
+    if (elapsed >= 7 * 7 * 86400 * 1000) return 'yellow';
+    if (elapsed >= 3 * 7 * 86400 * 1000) return 'orange';
+    return 'red';
+  }
+
+  let currentStage = '';
+
+  function applyStage(stage) {
+    if (stage === currentStage) return;
+    currentStage = stage;
+    const c = STAGE_COLORS[stage];
+    document.documentElement.style.setProperty('--accent', c.c);
+    document.documentElement.style.setProperty('--glow', c.glow);
+    document.body.style.backgroundColor = c.bg;
+  }
+
+  // ============================================================
+  //  РАЗБИВКА НА ЕДИНИЦЫ
+  // ============================================================
+
+  function getParts(remainingMs) {
+    const totalSec = Math.max(0, Math.floor(remainingMs / 1000));
+
+    const weeks      = Math.floor(totalSec / (7 * 86400));
+    const daysTotal  = Math.floor(totalSec / 86400);
+    const hoursTotal = Math.floor(totalSec / 3600);
+
+    const daysComp   = Math.floor((totalSec % (7 * 86400)) / 86400);
+    const hoursComp  = Math.floor((totalSec % 86400) / 3600);
+    const minutes    = Math.floor((totalSec % 3600) / 60);
+    const seconds    = totalSec % 60;
+
+    // > 10 дней — недели, дни, часы
+    if (totalSec > 10 * 86400) {
+      return { units: [
+        { v: weeks,     l: 'нед' },
+        { v: daysComp,  l: 'д'   },
+        { v: hoursComp, l: 'ч'   }
+      ]};
+    }
+
+    // 3–10 дней — дни, часы
+    if (totalSec > 3 * 86400) {
+      return { units: [
+        { v: daysTotal,  l: 'д' },
+        { v: hoursComp,  l: 'ч' }
+      ]};
+    }
+
+    // 12 часов – 3 дня — только часы
+    if (totalSec > 12 * 3600) {
+      return { units: [
+        { v: hoursTotal, l: 'ч' }
+      ]};
+    }
+
+    // ≤ 12 часов — часы, минуты, секунды
+    return { units: [
+      { v: hoursTotal, l: 'ч'   },
+      { v: minutes,    l: 'мин' },
+      { v: seconds,    l: 'с'   }
+    ]};
+  }
+
+  // ============================================================
+  //  ОТРИСОВКА
+  // ============================================================
+
+  let currentLayout = '';
+
+  function renderTimer(now) {
+    const remaining = Math.max(0, TIMER_END - now);
+    const parts = getParts(remaining);
+    const layout = parts.units.map(u => u.l).join('|');
+
+    if (layout !== currentLayout) {
+      currentLayout = layout;
+      timerEl.innerHTML = parts.units.map(u =>
+        `<div class="unit"><div class="value">${pad(u.v)}</div><div class="label">${u.l}</div></div>`
+      ).join('<span class="sep">:</span>');
+    } else {
+      const valueEls = timerEl.querySelectorAll('.value');
+      parts.units.forEach((u, i) => {
+        const el = valueEls[i];
+        if (el) {
+          const text = pad(u.v);
+          if (el.textContent !== text) el.textContent = text;
+        }
+      });
+    }
+  }
+
+  // ============================================================
+  //  ЦИКЛ
+  // ============================================================
+
+  function tick() {
+    const now = getNow();
+    applyStage(getStage(now));
+    renderTimer(now);
+  }
+
+  tick();
+  setInterval(tick, 200);
+</script>
+
+</body>
+</html>
